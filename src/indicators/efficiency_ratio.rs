@@ -33,140 +33,140 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct EfficiencyRatio {
-    period: usize,
-    index: usize,
-    count: usize,
-    deque: Box<[f64]>,
+	period: usize,
+	index: usize,
+	count: usize,
+	deque: Box<[f64]>,
 }
 
 impl EfficiencyRatio {
-    pub fn new(period: usize) -> Result<Self> {
-        match period {
-            0 => Err(TaError::InvalidParameter),
-            _ => Ok(Self {
-                period,
-                index: 0,
-                count: 0,
-                deque: vec![0.0; period].into_boxed_slice(),
-            }),
-        }
-    }
+	pub fn new(period: usize) -> Result<Self> {
+		match period {
+			0 => Err(TaError::InvalidParameter),
+			_ => Ok(Self {
+				period,
+				index: 0,
+				count: 0,
+				deque: vec![0.0; period].into_boxed_slice(),
+			}),
+		}
+	}
 }
 
 impl Period for EfficiencyRatio {
-    fn period(&self) -> usize {
-        self.period
-    }
+	fn period(&self) -> usize {
+		self.period
+	}
 }
 
 impl Next<f64> for EfficiencyRatio {
-    type Output = f64;
+	type Output = f64;
 
-    fn next(&mut self, input: f64) -> f64 {
-        let first = if self.count >= self.period {
-            self.deque[self.index]
-        } else {
-            self.count += 1;
-            self.deque[0]
-        };
-        self.deque[self.index] = input;
+	fn next(&mut self, input: f64) -> f64 {
+		let first = if self.count >= self.period {
+			self.deque[self.index]
+		} else {
+			self.count += 1;
+			self.deque[0]
+		};
+		self.deque[self.index] = input;
 
-        self.index = if self.index + 1 < self.period {
-            self.index + 1
-        } else {
-            0
-        };
+		self.index = if self.index + 1 < self.period {
+			self.index + 1
+		} else {
+			0
+		};
 
-        let mut volatility = 0.0;
-        let mut previous = first;
-        for n in &self.deque[self.index..self.count] {
-            volatility += (previous - n).abs();
-            previous = *n;
-        }
-        for n in &self.deque[0..self.index] {
-            volatility += (previous - n).abs();
-            previous = *n;
-        }
+		let mut volatility = 0.0;
+		let mut previous = first;
+		for n in &self.deque[self.index..self.count] {
+			volatility += (previous - n).abs();
+			previous = *n;
+		}
+		for n in &self.deque[0..self.index] {
+			volatility += (previous - n).abs();
+			previous = *n;
+		}
 
-        (first - input).abs() / volatility
-    }
+		(first - input).abs() / volatility
+	}
 }
 
 impl<T: Close> Next<&T> for EfficiencyRatio {
-    type Output = f64;
+	type Output = f64;
 
-    fn next(&mut self, input: &T) -> f64 {
-        self.next(input.close())
-    }
+	fn next(&mut self, input: &T) -> f64 {
+		self.next(input.close())
+	}
 }
 
 impl Reset for EfficiencyRatio {
-    fn reset(&mut self) {
-        self.index = 0;
-        self.count = 0;
-        for i in 0..self.period {
-            self.deque[i] = 0.0;
-        }
-    }
+	fn reset(&mut self) {
+		self.index = 0;
+		self.count = 0;
+		for i in 0..self.period {
+			self.deque[i] = 0.0;
+		}
+	}
 }
 
 impl Default for EfficiencyRatio {
-    fn default() -> Self {
-        Self::new(14).unwrap()
-    }
+	fn default() -> Self {
+		Self::new(14).unwrap()
+	}
 }
 
 impl fmt::Display for EfficiencyRatio {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ER({})", self.period)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "ER({})", self.period)
+	}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test_helper::*;
+	use super::*;
+	use crate::test_helper::*;
 
-    test_indicator!(EfficiencyRatio);
+	test_indicator!(EfficiencyRatio);
 
-    #[test]
-    fn test_new() {
-        assert!(EfficiencyRatio::new(0).is_err());
-        assert!(EfficiencyRatio::new(1).is_ok());
-    }
+	#[test]
+	fn test_new() {
+		assert!(EfficiencyRatio::new(0).is_err());
+		assert!(EfficiencyRatio::new(1).is_ok());
+	}
 
-    #[test]
-    fn test_next() {
-        let mut er = EfficiencyRatio::new(3).unwrap();
+	#[test]
+	fn test_next() {
+		let mut er = EfficiencyRatio::new(3).unwrap();
 
-        assert_eq!(round(er.next(3.0)), 1.0);
-        assert_eq!(round(er.next(5.0)), 1.0);
-        assert_eq!(round(er.next(2.0)), 0.2);
-        assert_eq!(round(er.next(3.0)), 0.0);
-        assert_eq!(round(er.next(1.0)), 0.667);
-        assert_eq!(round(er.next(3.0)), 0.2);
-        assert_eq!(round(er.next(4.0)), 0.2);
-        assert_eq!(round(er.next(6.0)), 1.0);
-    }
+		assert_eq!(round(er.next(3.0)), 1.0);
+		assert_eq!(round(er.next(5.0)), 1.0);
+		assert_eq!(round(er.next(2.0)), 0.2);
+		assert_eq!(round(er.next(3.0)), 0.0);
+		assert_eq!(round(er.next(1.0)), 0.667);
+		assert_eq!(round(er.next(3.0)), 0.2);
+		assert_eq!(round(er.next(4.0)), 0.2);
+		assert_eq!(round(er.next(6.0)), 1.0);
+	}
 
-    #[test]
-    fn test_reset() {
-        let mut er = EfficiencyRatio::new(3).unwrap();
+	#[test]
+	fn test_reset() {
+		let mut er = EfficiencyRatio::new(3).unwrap();
 
-        er.next(3.0);
-        er.next(5.0);
+		er.next(3.0);
+		er.next(5.0);
 
-        er.reset();
+		er.reset();
 
-        assert_eq!(round(er.next(3.0)), 1.0);
-        assert_eq!(round(er.next(5.0)), 1.0);
-        assert_eq!(round(er.next(2.0)), 0.2);
-        assert_eq!(round(er.next(3.0)), 0.0);
-    }
+		assert_eq!(round(er.next(3.0)), 1.0);
+		assert_eq!(round(er.next(5.0)), 1.0);
+		assert_eq!(round(er.next(2.0)), 0.2);
+		assert_eq!(round(er.next(3.0)), 0.0);
+	}
 
-    #[test]
-    fn test_display() {
-        let er = EfficiencyRatio::new(17).unwrap();
-        assert_eq!(format!("{}", er), "ER(17)");
-    }
+	#[test]
+	fn test_display() {
+		let er = EfficiencyRatio::new(17).unwrap();
+		assert_eq!(format!("{}", er), "ER(17)");
+	}
 }

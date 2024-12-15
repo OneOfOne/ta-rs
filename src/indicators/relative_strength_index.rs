@@ -72,128 +72,128 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct RelativeStrengthIndex {
-    period: usize,
-    up_ema_indicator: Ema,
-    down_ema_indicator: Ema,
-    prev_val: f64,
-    is_new: bool,
+	period: usize,
+	up_ema_indicator: Ema,
+	down_ema_indicator: Ema,
+	prev_val: f64,
+	is_new: bool,
 }
 
 impl RelativeStrengthIndex {
-    pub fn new(period: usize) -> Result<Self> {
-        Ok(Self {
-            period,
-            up_ema_indicator: Ema::new(period)?,
-            down_ema_indicator: Ema::new(period)?,
-            prev_val: 0.0,
-            is_new: true,
-        })
-    }
+	pub fn new(period: usize) -> Result<Self> {
+		Ok(Self {
+			period,
+			up_ema_indicator: Ema::new(period)?,
+			down_ema_indicator: Ema::new(period)?,
+			prev_val: 0.0,
+			is_new: true,
+		})
+	}
 }
 
 impl Period for RelativeStrengthIndex {
-    fn period(&self) -> usize {
-        self.period
-    }
+	fn period(&self) -> usize {
+		self.period
+	}
 }
 
 impl Next<f64> for RelativeStrengthIndex {
-    type Output = f64;
+	type Output = f64;
 
-    fn next(&mut self, input: f64) -> Self::Output {
-        let mut up = 0.0;
-        let mut down = 0.0;
+	fn next(&mut self, input: f64) -> Self::Output {
+		let mut up = 0.0;
+		let mut down = 0.0;
 
-        if self.is_new {
-            self.is_new = false;
-            // Initialize with some small seed numbers to avoid division by zero
-            up = 0.1;
-            down = 0.1;
-        } else {
-            if input > self.prev_val {
-                up = input - self.prev_val;
-            } else {
-                down = self.prev_val - input;
-            }
-        }
+		if self.is_new {
+			self.is_new = false;
+			// Initialize with some small seed numbers to avoid division by zero
+			up = 0.1;
+			down = 0.1;
+		} else {
+			if input > self.prev_val {
+				up = input - self.prev_val;
+			} else {
+				down = self.prev_val - input;
+			}
+		}
 
-        self.prev_val = input;
-        let up_ema = self.up_ema_indicator.next(up);
-        let down_ema = self.down_ema_indicator.next(down);
-        100.0 * up_ema / (up_ema + down_ema)
-    }
+		self.prev_val = input;
+		let up_ema = self.up_ema_indicator.next(up);
+		let down_ema = self.down_ema_indicator.next(down);
+		100.0 * up_ema / (up_ema + down_ema)
+	}
 }
 
 impl<T: Close> Next<&T> for RelativeStrengthIndex {
-    type Output = f64;
+	type Output = f64;
 
-    fn next(&mut self, input: &T) -> Self::Output {
-        self.next(input.close())
-    }
+	fn next(&mut self, input: &T) -> Self::Output {
+		self.next(input.close())
+	}
 }
 
 impl Reset for RelativeStrengthIndex {
-    fn reset(&mut self) {
-        self.is_new = true;
-        self.prev_val = 0.0;
-        self.up_ema_indicator.reset();
-        self.down_ema_indicator.reset();
-    }
+	fn reset(&mut self) {
+		self.is_new = true;
+		self.prev_val = 0.0;
+		self.up_ema_indicator.reset();
+		self.down_ema_indicator.reset();
+	}
 }
 
 impl Default for RelativeStrengthIndex {
-    fn default() -> Self {
-        Self::new(14).unwrap()
-    }
+	fn default() -> Self {
+		Self::new(14).unwrap()
+	}
 }
 
 impl fmt::Display for RelativeStrengthIndex {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "RSI({})", self.period)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "RSI({})", self.period)
+	}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test_helper::*;
+	use super::*;
+	use crate::test_helper::*;
 
-    test_indicator!(RelativeStrengthIndex);
+	test_indicator!(RelativeStrengthIndex);
 
-    #[test]
-    fn test_new() {
-        assert!(RelativeStrengthIndex::new(0).is_err());
-        assert!(RelativeStrengthIndex::new(1).is_ok());
-    }
+	#[test]
+	fn test_new() {
+		assert!(RelativeStrengthIndex::new(0).is_err());
+		assert!(RelativeStrengthIndex::new(1).is_ok());
+	}
 
-    #[test]
-    fn test_next() {
-        let mut rsi = RelativeStrengthIndex::new(3).unwrap();
-        assert_eq!(rsi.next(10.0), 50.0);
-        assert_eq!(rsi.next(10.5).round(), 86.0);
-        assert_eq!(rsi.next(10.0).round(), 35.0);
-        assert_eq!(rsi.next(9.5).round(), 16.0);
-    }
+	#[test]
+	fn test_next() {
+		let mut rsi = RelativeStrengthIndex::new(3).unwrap();
+		assert_eq!(rsi.next(10.0), 50.0);
+		assert_eq!(rsi.next(10.5).round(), 86.0);
+		assert_eq!(rsi.next(10.0).round(), 35.0);
+		assert_eq!(rsi.next(9.5).round(), 16.0);
+	}
 
-    #[test]
-    fn test_reset() {
-        let mut rsi = RelativeStrengthIndex::new(3).unwrap();
-        assert_eq!(rsi.next(10.0), 50.0);
-        assert_eq!(rsi.next(10.5).round(), 86.0);
+	#[test]
+	fn test_reset() {
+		let mut rsi = RelativeStrengthIndex::new(3).unwrap();
+		assert_eq!(rsi.next(10.0), 50.0);
+		assert_eq!(rsi.next(10.5).round(), 86.0);
 
-        rsi.reset();
-        assert_eq!(rsi.next(10.0).round(), 50.0);
-        assert_eq!(rsi.next(10.5).round(), 86.0);
-    }
+		rsi.reset();
+		assert_eq!(rsi.next(10.0).round(), 50.0);
+		assert_eq!(rsi.next(10.5).round(), 86.0);
+	}
 
-    #[test]
-    fn test_default() {
-        RelativeStrengthIndex::default();
-    }
+	#[test]
+	fn test_default() {
+		RelativeStrengthIndex::default();
+	}
 
-    #[test]
-    fn test_display() {
-        let rsi = RelativeStrengthIndex::new(16).unwrap();
-        assert_eq!(format!("{}", rsi), "RSI(16)");
-    }
+	#[test]
+	fn test_display() {
+		let rsi = RelativeStrengthIndex::new(16).unwrap();
+		assert_eq!(format!("{}", rsi), "RSI(16)");
+	}
 }

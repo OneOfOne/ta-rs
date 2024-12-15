@@ -3,12 +3,12 @@
 
 /// Resets an indicator to the initial state.
 pub trait Reset {
-    fn reset(&mut self);
+	fn reset(&mut self);
 }
 
 /// Return the period used by the indicator.
 pub trait Period {
-    fn period(&self) -> usize;
+	fn period(&self) -> usize;
 }
 
 /// Consumes a data item of type `T` and returns `Output`.
@@ -21,31 +21,31 @@ pub trait Period {
 /// MACD returns 3 values.
 ///
 pub trait Next<T> {
-    type Output;
-    fn next(&mut self, input: T) -> Self::Output;
+	type Output;
+	fn next(&mut self, input: T) -> Self::Output;
 }
 
 /// Open price of a particular period.
 pub trait Open {
-    fn open(&self) -> f64;
+	fn open(&self) -> f64;
 }
 
 /// Close price of a particular period.
 pub trait Close {
-    fn close(&self) -> f64;
+	fn close(&self) -> f64;
 }
 
 /// Lowest price of a particular period.
 pub trait Low {
-    fn low(&self) -> f64;
+	fn low(&self) -> f64;
 }
 
 /// Highest price of a particular period.
 pub trait High {
-    fn high(&self) -> f64;
+	fn high(&self) -> f64;
 }
 
 /// Trading volume of a particular trading period.
 pub trait Volume {
-    fn volume(&self) -> f64;
+	fn volume(&self) -> f64;
 }

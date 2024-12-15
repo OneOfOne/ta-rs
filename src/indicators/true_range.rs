@@ -52,115 +52,115 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct TrueRange {
-    prev_close: Option<f64>,
+	prev_close: Option<f64>,
 }
 
 impl TrueRange {
-    pub fn new() -> Self {
-        Self { prev_close: None }
-    }
+	pub fn new() -> Self {
+		Self { prev_close: None }
+	}
 }
 
 impl Default for TrueRange {
-    fn default() -> Self {
-        Self::new()
-    }
+	fn default() -> Self {
+		Self::new()
+	}
 }
 
 impl fmt::Display for TrueRange {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "TRUE_RANGE()")
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "TRUE_RANGE()")
+	}
 }
 
 impl Next<f64> for TrueRange {
-    type Output = f64;
+	type Output = f64;
 
-    fn next(&mut self, input: f64) -> Self::Output {
-        let distance = match self.prev_close {
-            Some(prev) => (input - prev).abs(),
-            None => 0.0,
-        };
-        self.prev_close = Some(input);
-        distance
-    }
+	fn next(&mut self, input: f64) -> Self::Output {
+		let distance = match self.prev_close {
+			Some(prev) => (input - prev).abs(),
+			None => 0.0,
+		};
+		self.prev_close = Some(input);
+		distance
+	}
 }
 
 impl<T: High + Low + Close> Next<&T> for TrueRange {
-    type Output = f64;
+	type Output = f64;
 
-    fn next(&mut self, bar: &T) -> Self::Output {
-        let max_dist = match self.prev_close {
-            Some(prev_close) => {
-                let dist1 = bar.high() - bar.low();
-                let dist2 = (bar.high() - prev_close).abs();
-                let dist3 = (bar.low() - prev_close).abs();
-                max3(dist1, dist2, dist3)
-            }
-            None => bar.high() - bar.low(),
-        };
-        self.prev_close = Some(bar.close());
-        max_dist
-    }
+	fn next(&mut self, bar: &T) -> Self::Output {
+		let max_dist = match self.prev_close {
+			Some(prev_close) => {
+				let dist1 = bar.high() - bar.low();
+				let dist2 = (bar.high() - prev_close).abs();
+				let dist3 = (bar.low() - prev_close).abs();
+				max3(dist1, dist2, dist3)
+			}
+			None => bar.high() - bar.low(),
+		};
+		self.prev_close = Some(bar.close());
+		max_dist
+	}
 }
 
 impl Reset for TrueRange {
-    fn reset(&mut self) {
-        self.prev_close = None;
-    }
+	fn reset(&mut self) {
+		self.prev_close = None;
+	}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test_helper::*;
+	use super::*;
+	use crate::test_helper::*;
 
-    test_indicator!(TrueRange);
+	test_indicator!(TrueRange);
 
-    #[test]
-    fn test_next_f64() {
-        let mut tr = TrueRange::new();
-        assert_eq!(round(tr.next(2.5)), 0.0);
-        assert_eq!(round(tr.next(3.6)), 1.1);
-        assert_eq!(round(tr.next(3.3)), 0.3);
-    }
+	#[test]
+	fn test_next_f64() {
+		let mut tr = TrueRange::new();
+		assert_eq!(round(tr.next(2.5)), 0.0);
+		assert_eq!(round(tr.next(3.6)), 1.1);
+		assert_eq!(round(tr.next(3.3)), 0.3);
+	}
 
-    #[test]
-    fn test_next_bar() {
-        let mut tr = TrueRange::new();
+	#[test]
+	fn test_next_bar() {
+		let mut tr = TrueRange::new();
 
-        let bar1 = Bar::new().high(10).low(7.5).close(9);
-        let bar2 = Bar::new().high(11).low(9).close(9.5);
-        let bar3 = Bar::new().high(9).low(5).close(8);
+		let bar1 = Bar::new().high(10).low(7.5).close(9);
+		let bar2 = Bar::new().high(11).low(9).close(9.5);
+		let bar3 = Bar::new().high(9).low(5).close(8);
 
-        assert_eq!(tr.next(&bar1), 2.5);
-        assert_eq!(tr.next(&bar2), 2.0);
-        assert_eq!(tr.next(&bar3), 4.5);
-    }
+		assert_eq!(tr.next(&bar1), 2.5);
+		assert_eq!(tr.next(&bar2), 2.0);
+		assert_eq!(tr.next(&bar3), 4.5);
+	}
 
-    #[test]
-    fn test_reset() {
-        let mut tr = TrueRange::new();
+	#[test]
+	fn test_reset() {
+		let mut tr = TrueRange::new();
 
-        let bar1 = Bar::new().high(10).low(7.5).close(9);
-        let bar2 = Bar::new().high(11).low(9).close(9.5);
+		let bar1 = Bar::new().high(10).low(7.5).close(9);
+		let bar2 = Bar::new().high(11).low(9).close(9.5);
 
-        tr.next(&bar1);
-        tr.next(&bar2);
+		tr.next(&bar1);
+		tr.next(&bar2);
 
-        tr.reset();
-        let bar3 = Bar::new().high(60).low(15).close(51);
-        assert_eq!(tr.next(&bar3), 45.0);
-    }
+		tr.reset();
+		let bar3 = Bar::new().high(60).low(15).close(51);
+		assert_eq!(tr.next(&bar3), 45.0);
+	}
 
-    #[test]
-    fn test_default() {
-        TrueRange::default();
-    }
+	#[test]
+	fn test_default() {
+		TrueRange::default();
+	}
 
-    #[test]
-    fn test_display() {
-        let indicator = TrueRange::new();
-        assert_eq!(format!("{}", indicator), "TRUE_RANGE()");
-    }
+	#[test]
+	fn test_display() {
+		let indicator = TrueRange::new();
+		assert_eq!(format!("{}", indicator), "TRUE_RANGE()");
+	}
 }

@@ -31,118 +31,118 @@ use crate::{Close, High, Low, Next, Period, Reset};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct CommodityChannelIndex {
-    sma: SimpleMovingAverage,
-    mad: MeanAbsoluteDeviation,
+	sma: SimpleMovingAverage,
+	mad: MeanAbsoluteDeviation,
 }
 
 impl CommodityChannelIndex {
-    pub fn new(period: usize) -> Result<Self> {
-        Ok(Self {
-            sma: SimpleMovingAverage::new(period)?,
-            mad: MeanAbsoluteDeviation::new(period)?,
-        })
-    }
+	pub fn new(period: usize) -> Result<Self> {
+		Ok(Self {
+			sma: SimpleMovingAverage::new(period)?,
+			mad: MeanAbsoluteDeviation::new(period)?,
+		})
+	}
 }
 
 impl Period for CommodityChannelIndex {
-    fn period(&self) -> usize {
-        self.sma.period()
-    }
+	fn period(&self) -> usize {
+		self.sma.period()
+	}
 }
 
 impl<T: Close + High + Low> Next<&T> for CommodityChannelIndex {
-    type Output = f64;
+	type Output = f64;
 
-    fn next(&mut self, input: &T) -> Self::Output {
-        let tp = (input.close() + input.high() + input.low()) / 3.0;
-        let sma = self.sma.next(tp);
-        let mad = self.mad.next(input);
+	fn next(&mut self, input: &T) -> Self::Output {
+		let tp = (input.close() + input.high() + input.low()) / 3.0;
+		let sma = self.sma.next(tp);
+		let mad = self.mad.next(input);
 
-        if mad == 0.0 {
-            return 0.0;
-        }
+		if mad == 0.0 {
+			return 0.0;
+		}
 
-        (tp - sma) / (mad * 0.015)
-    }
+		(tp - sma) / (mad * 0.015)
+	}
 }
 
 impl Reset for CommodityChannelIndex {
-    fn reset(&mut self) {
-        self.sma.reset();
-        self.mad.reset();
-    }
+	fn reset(&mut self) {
+		self.sma.reset();
+		self.mad.reset();
+	}
 }
 
 impl Default for CommodityChannelIndex {
-    fn default() -> Self {
-        Self::new(20).unwrap()
-    }
+	fn default() -> Self {
+		Self::new(20).unwrap()
+	}
 }
 
 impl fmt::Display for CommodityChannelIndex {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CCI({})", self.sma.period())
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "CCI({})", self.sma.period())
+	}
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test_helper::*;
+	use super::*;
+	use crate::test_helper::*;
 
-    #[test]
-    fn test_new() {
-        assert!(CommodityChannelIndex::new(0).is_err());
-        assert!(CommodityChannelIndex::new(1).is_ok());
-    }
+	#[test]
+	fn test_new() {
+		assert!(CommodityChannelIndex::new(0).is_err());
+		assert!(CommodityChannelIndex::new(1).is_ok());
+	}
 
-    #[test]
-    fn test_next_bar() {
-        let mut cci = CommodityChannelIndex::new(5).unwrap();
+	#[test]
+	fn test_next_bar() {
+		let mut cci = CommodityChannelIndex::new(5).unwrap();
 
-        let bar1 = Bar::new().high(2).low(1).close(1.5);
-        assert_eq!(round(cci.next(&bar1)), 0.0);
+		let bar1 = Bar::new().high(2).low(1).close(1.5);
+		assert_eq!(round(cci.next(&bar1)), 0.0);
 
-        let bar2 = Bar::new().high(5).low(3).close(4);
-        assert_eq!(round(cci.next(&bar2)), 66.667);
+		let bar2 = Bar::new().high(5).low(3).close(4);
+		assert_eq!(round(cci.next(&bar2)), 66.667);
 
-        let bar3 = Bar::new().high(9).low(7).close(8);
-        assert_eq!(round(cci.next(&bar3)), 100.0);
+		let bar3 = Bar::new().high(9).low(7).close(8);
+		assert_eq!(round(cci.next(&bar3)), 100.0);
 
-        let bar4 = Bar::new().high(5).low(3).close(4);
-        assert_eq!(round(cci.next(&bar4)), -13.793);
+		let bar4 = Bar::new().high(5).low(3).close(4);
+		assert_eq!(round(cci.next(&bar4)), -13.793);
 
-        let bar5 = Bar::new().high(5).low(3).close(4);
-        assert_eq!(round(cci.next(&bar5)), -13.514);
+		let bar5 = Bar::new().high(5).low(3).close(4);
+		assert_eq!(round(cci.next(&bar5)), -13.514);
 
-        let bar6 = Bar::new().high(2).low(1).close(1.5);
-        assert_eq!(round(cci.next(&bar6)), -126.126);
-    }
+		let bar6 = Bar::new().high(2).low(1).close(1.5);
+		assert_eq!(round(cci.next(&bar6)), -126.126);
+	}
 
-    #[test]
-    fn test_reset() {
-        let mut cci = CommodityChannelIndex::new(5).unwrap();
+	#[test]
+	fn test_reset() {
+		let mut cci = CommodityChannelIndex::new(5).unwrap();
 
-        let bar1 = Bar::new().high(2).low(1).close(1.5);
-        let bar2 = Bar::new().high(5).low(3).close(4);
+		let bar1 = Bar::new().high(2).low(1).close(1.5);
+		let bar2 = Bar::new().high(5).low(3).close(4);
 
-        assert_eq!(round(cci.next(&bar1)), 0.0);
-        assert_eq!(round(cci.next(&bar2)), 66.667);
+		assert_eq!(round(cci.next(&bar1)), 0.0);
+		assert_eq!(round(cci.next(&bar2)), 66.667);
 
-        cci.reset();
+		cci.reset();
 
-        assert_eq!(round(cci.next(&bar1)), 0.0);
-        assert_eq!(round(cci.next(&bar2)), 66.667);
-    }
+		assert_eq!(round(cci.next(&bar1)), 0.0);
+		assert_eq!(round(cci.next(&bar2)), 66.667);
+	}
 
-    #[test]
-    fn test_default() {
-        CommodityChannelIndex::default();
-    }
+	#[test]
+	fn test_default() {
+		CommodityChannelIndex::default();
+	}
 
-    #[test]
-    fn test_display() {
-        let indicator = CommodityChannelIndex::new(10).unwrap();
-        assert_eq!(format!("{}", indicator), "CCI(10)");
-    }
+	#[test]
+	fn test_display() {
+		let indicator = CommodityChannelIndex::new(10).unwrap();
+		assert_eq!(format!("{}", indicator), "CCI(10)");
+	}
 }

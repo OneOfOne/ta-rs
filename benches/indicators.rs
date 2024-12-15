@@ -1,33 +1,33 @@
 use bencher::{benchmark_group, benchmark_main, black_box, Bencher};
 use rand::Rng;
 use ta::indicators::{
-    AverageTrueRange, BollingerBands, ChandelierExit, CommodityChannelIndex, EfficiencyRatio,
-    ExponentialMovingAverage, FastStochastic, KeltnerChannel, Maximum, MeanAbsoluteDeviation,
-    Minimum, MoneyFlowIndex, MovingAverageConvergenceDivergence, OnBalanceVolume,
-    PercentagePriceOscillator, RateOfChange, RelativeStrengthIndex, SimpleMovingAverage,
-    SlowStochastic, StandardDeviation, TrueRange, WeightedMovingAverage,
+	AverageTrueRange, BollingerBands, ChandelierExit, CommodityChannelIndex, EfficiencyRatio,
+	ExponentialMovingAverage, FastStochastic, KeltnerChannel, Maximum, MeanAbsoluteDeviation,
+	Minimum, MoneyFlowIndex, MovingAverageConvergenceDivergence, OnBalanceVolume,
+	PercentagePriceOscillator, RateOfChange, RelativeStrengthIndex, SimpleMovingAverage,
+	SlowStochastic, StandardDeviation, TrueRange, WeightedMovingAverage,
 };
 use ta::{DataItem, Next};
 
 const ITEMS_COUNT: usize = 5_000;
 
 fn rand_data_item() -> DataItem {
-    let mut rng = rand::thread_rng();
+	let mut rng = rand::thread_rng();
 
-    let low = rng.gen_range(0.0, 500.0);
-    let high = rng.gen_range(500.0, 1000.0);
-    let open = rng.gen_range(low, high);
-    let close = rng.gen_range(low, high);
-    let volume = rng.gen_range(0.0, 10_000.0);
+	let low = rng.gen_range(0.0, 500.0);
+	let high = rng.gen_range(500.0, 1000.0);
+	let open = rng.gen_range(low, high);
+	let close = rng.gen_range(low, high);
+	let volume = rng.gen_range(0.0, 10_000.0);
 
-    DataItem::builder()
-        .open(open)
-        .high(high)
-        .low(low)
-        .close(close)
-        .volume(volume)
-        .build()
-        .unwrap()
+	DataItem::builder()
+		.open(open)
+		.high(high)
+		.low(low)
+		.close(close)
+		.volume(volume)
+		.build()
+		.unwrap()
 }
 
 macro_rules! bench_indicators {
@@ -52,26 +52,26 @@ macro_rules! bench_indicators {
 }
 
 bench_indicators!(
-    AverageTrueRange,
-    ExponentialMovingAverage,
-    MeanAbsoluteDeviation,
-    BollingerBands,
-    ChandelierExit,
-    EfficiencyRatio,
-    FastStochastic,
-    KeltnerChannel,
-    Maximum,
-    Minimum,
-    MoneyFlowIndex,
-    MovingAverageConvergenceDivergence,
-    OnBalanceVolume,
-    PercentagePriceOscillator,
-    CommodityChannelIndex,
-    RateOfChange,
-    RelativeStrengthIndex,
-    SimpleMovingAverage,
-    SlowStochastic,
-    StandardDeviation,
-    TrueRange,
-    WeightedMovingAverage
+	AverageTrueRange,
+	ExponentialMovingAverage,
+	MeanAbsoluteDeviation,
+	BollingerBands,
+	ChandelierExit,
+	EfficiencyRatio,
+	FastStochastic,
+	KeltnerChannel,
+	Maximum,
+	Minimum,
+	MoneyFlowIndex,
+	MovingAverageConvergenceDivergence,
+	OnBalanceVolume,
+	PercentagePriceOscillator,
+	CommodityChannelIndex,
+	RateOfChange,
+	RelativeStrengthIndex,
+	SimpleMovingAverage,
+	SlowStochastic,
+	StandardDeviation,
+	TrueRange,
+	WeightedMovingAverage
 );
