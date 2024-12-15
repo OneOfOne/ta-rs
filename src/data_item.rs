@@ -74,6 +74,7 @@ impl Volume for DataItem {
 	}
 }
 
+#[derive(Debug, Default, Clone)]
 pub struct DataItemBuilder {
 	open: Option<f64>,
 	high: Option<f64>,
